@@ -522,3 +522,10 @@ dialog::backdrop { background: rgb(4 7 10 / .7); backdrop-filter: blur(6px); }
 .tf-stops li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--raise); }
 .tf-stops p { color: var(--muted); font-size: 14px; margin-top: 6px; white-space: pre-wrap; }
 .tf-stops .stop-places { margin-top: 8px; }
+
+/* ---------- v9: keep the top bar inside small screens ---------- */
+@media (max-width: 767px) {
+  .brand span { display: none; }
+  .nav { gap: 6px; }
+  .topbar { gap: 8px; }
+}
