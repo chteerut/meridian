@@ -41,14 +41,16 @@
   };
   const norm = d => { const v = d.data(); return { ...v, id: d.id, created: v.created?.toMillis ? v.created.toMillis() : Date.now() }; };
   const col = n => A().fb().firestore().collection(n);
+  // always ask the server first: the default read can answer from an empty local cache right after a write
+  const fresh = q => q.get({ source: 'server' }).catch(() => q.get());
   const cloud = {
-    async latest() { return (await col('trips').orderBy('created', 'desc').limit(30).get()).docs.map(norm); },
-    async mine(uid) { return (await col('trips').where('uid', '==', uid).limit(50).get()).docs.map(norm).sort(byNew); },
-    async byUids(uids) { return uids.length ? (await col('trips').where('uid', 'in', uids.slice(0, 30)).limit(50).get()).docs.map(norm).sort(byNew) : []; },
-    async get(id) { const d = await col('trips').doc(id).get(); return d.exists ? norm(d) : null; },
+    async latest() { return (await fresh(col('trips').orderBy('created', 'desc').limit(30))).docs.map(norm); },
+    async mine(uid) { return (await fresh(col('trips').where('uid', '==', uid).limit(50))).docs.map(norm).sort(byNew); },
+    async byUids(uids) { return uids.length ? (await fresh(col('trips').where('uid', 'in', uids.slice(0, 30)).limit(50))).docs.map(norm).sort(byNew) : []; },
+    async get(id) { const d = await fresh(col('trips').doc(id)); return d.exists ? norm(d) : null; },
     async add(doc) { return (await col('trips').add({ ...doc, created: A().fb().firestore.FieldValue.serverTimestamp() })).id; },
     async del(id) { await col('trips').doc(id).delete(); },
-    async following(uid) { return (await col('follows').where('from', '==', uid).limit(100).get()).docs.map(d => d.data()); },
+    async following(uid) { return (await fresh(col('follows').where('from', '==', uid).limit(100))).docs.map(d => d.data()); },
     async follow(uid, to, toName) { await col('follows').doc(`${uid}_${to}`).set({ from: uid, to, toName, created: A().fb().firestore.FieldValue.serverTimestamp() }); },
     async unfollow(uid, to) { await col('follows').doc(`${uid}_${to}`).delete(); },
   };

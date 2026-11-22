@@ -17,7 +17,8 @@
     await script(SDK + 'app-compat.js');
     await Promise.all([script(SDK + 'auth-compat.js'), script(SDK + 'firestore-compat.js')]);
     fb = window.firebase; fb.initializeApp(CFG.firebase);
-    fb.firestore().settings({ ignoreUndefinedProperties: true });   // empty optional fields are skipped instead of refusing the save
+    // long polling works through VPNs, ad blockers and strict networks that break the default streaming connection
+    fb.firestore().settings({ ignoreUndefinedProperties: true, experimentalForceLongPolling: true, experimentalAutoDetectLongPolling: false, merge: true });   // empty optional fields are skipped instead of refusing the save
     fb.auth().onAuthStateChanged(u => { me = u; drawUser(); draw(); });
   })();
 
@@ -74,7 +75,8 @@
     const id = place.id;
     try {
       await start();
-      const snap = await fb.firestore().collection('contributions').where('placeId', '==', id).limit(100).get();
+      const q = fb.firestore().collection('contributions').where('placeId', '==', id).limit(100);
+      const snap = await q.get({ source: 'server' }).catch(() => q.get());
       if (place?.id !== id) return;
       items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.created?.seconds || 0) - (a.created?.seconds || 0));
       state = 'ready';
