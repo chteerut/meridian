@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Meridian | Interactive world travel planner</title>
+  <meta name="description" content="Spin an interactive 3D globe, explore cities with real photos, videos and traveller reviews, and build your own trip route with Meridian travel planner.">
+  <meta name="theme-color" content="#070b10">
+  <link rel="canonical" href="https://example.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Meridian | Interactive world travel planner">
+  <meta property="og:description" content="Explore the world on a 3D globe and plan your own route, city by city.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- For production, self-host these two families -->
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="vendor/phosphor.css">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Meridian",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web",
+    "description": "Interactive 3D globe and travel planner. Explore cities, photos, videos and reviews, then build your own route.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body>
+  <div id="globe" aria-label="Interactive 3D globe. Drag to rotate, scroll or pinch to zoom." role="application"></div>
+  <div id="map" aria-label="Detail map with a cartoon city, 3D buildings and landmarks" role="application"></div>
+
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Meridian home">
+      <i class="ph ph-globe-hemisphere-east" aria-hidden="true"></i>
+      <span>Meridian</span>
+    </a>
+
+    <div class="search" role="search">
+      <label class="sr-only" for="search-input">Search any city in the world</label>
+      <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+      <input id="search-input" type="search" autocomplete="off" placeholder="Search any city" aria-controls="search-results" aria-expanded="false">
+      <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+    </div>
+
+    <nav class="nav" aria-label="Main">
+      <button class="btn btn-ghost" id="open-browse" type="button">
+        <i class="ph ph-compass" aria-hidden="true"></i><span>Destinations</span>
+      </button>
+      <button class="btn btn-ghost" id="open-feed" type="button">
+        <i class="ph ph-users-three" aria-hidden="true"></i><span>Community</span>
+      </button>
+      <button class="btn btn-solid" id="open-trip" type="button" aria-controls="trip">
+        <i class="ph ph-suitcase-rolling" aria-hidden="true"></i><span>My trip</span>
+        <b class="count" id="trip-count" hidden>0</b>
+      </button>
+      <button class="btn btn-ghost" id="account" type="button" aria-label="Sign in with Google"></button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <h1>Spin the planet.<br>Plan the trip.</h1>
+      <p>Tap any country or city to see its best spots, cafes and photos, then build your own route.</p>
+      <div class="hero-actions">
+        <button class="btn btn-accent" id="locate-hero" type="button">
+          <i class="ph ph-navigation-arrow" aria-hidden="true"></i><span>Show where I am</span>
+        </button>
+        <button class="btn btn-ghost" id="surprise" type="button">
+          <i class="ph ph-shuffle" aria-hidden="true"></i><span>Surprise me</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="controls" role="group" aria-label="Globe controls">
+      <button type="button" id="zoom-in" aria-label="Zoom in"><i class="ph ph-plus"></i></button>
+      <button type="button" id="zoom-out" aria-label="Zoom out"><i class="ph ph-minus"></i></button>
+      <button type="button" id="locate" aria-label="Show my location"><i class="ph ph-crosshair"></i></button>
+      <button type="button" id="toggle-tilt" aria-label="Tilt the map for a 3D view" aria-pressed="false"><i class="ph ph-cube"></i></button>
+      <button type="button" id="toggle-style" aria-label="Switch between cartoon, satellite and street map"><i class="ph ph-stack"></i></button>
+      <button type="button" id="toggle-night" aria-label="Switch between day and night map" aria-pressed="false"><i class="ph ph-moon"></i></button>
+      <button type="button" id="toggle-spin" aria-label="Pause or resume rotation" aria-pressed="true"><i class="ph ph-arrows-clockwise"></i></button>
+    </div>
+
+    <!-- City panel -->
+    <aside class="panel panel-right" id="place" aria-labelledby="place-name" inert>
+      <button class="panel-close" id="close-place" type="button" aria-label="Close city panel"><i class="ph ph-x"></i></button>
+      <div class="panel-scroll">
+        <figure class="place-cover"><img id="place-img" alt="" decoding="async"></figure>
+        <div class="place-head">
+          <p class="place-country"><button type="button" id="place-country"></button></p>
+          <h2 id="place-name"></h2>
+          <div class="facts" id="place-facts"></div>
+          <button class="btn btn-accent btn-wide" id="add-stop" type="button">
+            <i class="ph ph-plus-circle" aria-hidden="true"></i><span>Add to my trip</span>
+          </button>
+          <button class="btn btn-ghost btn-wide" id="plan-open" type="button" style="margin-top:8px">
+            <i class="ph ph-magic-wand" aria-hidden="true"></i><span>Plan this trip for me</span>
+          </button>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="City information">
+          <button role="tab" aria-selected="true" data-tab="overview">Overview</button>
+          <button role="tab" aria-selected="false" data-tab="spots">Spots <b id="spots-count"></b></button>
+          <button role="tab" aria-selected="false" data-tab="photos">Photos</button>
+          <button role="tab" aria-selected="false" data-tab="videos">Videos</button>
+          <button role="tab" aria-selected="false" data-tab="reviews">Reviews</button>
+        </div>
+
+        <section class="tab-body" data-body="overview">
+          <p class="blurb" id="place-blurb"></p>
+          <div id="regions-wrap" hidden>
+            <h3 id="regions-title">Regions</h3>
+            <label class="sr-only" for="regions-find">Find a region</label>
+            <input class="mini-input" id="regions-find" type="search" placeholder="Find a province or state" autocomplete="off">
+            <div class="regions" id="place-regions"></div>
+          </div>
+          <div id="sights-wrap">
+            <h3 id="sights-title">Places to see</h3>
+            <ul class="sights" id="place-sights"></ul>
+          </div>
+          <button class="btn btn-ghost btn-wide" id="see-spots" type="button" style="margin-top:16px"><i class="ph ph-map-pin-area"></i><span>See all spots, cafes and restaurants</span></button>
+        </section>
+        <section class="tab-body" data-body="spots" hidden>
+          <div class="community" id="community" aria-live="polite"></div>
+          <div class="chips spot-filters" id="spot-filters" role="group" aria-label="Filter spots"></div>
+          <div class="spot-bar">
+            <span id="spot-total"></span>
+            <label>Sort <select id="spot-sort">
+              <option value="famous">Most famous</option>
+              <option value="near">Nearest to centre</option>
+              <option value="az">A to Z</option>
+            </select></label>
+          </div>
+          <ul class="spots" id="spot-list"></ul>
+        </section>
+        <section class="tab-body" data-body="photos" hidden>
+          <div class="photo-grid" id="place-photos"></div>
+        </section>
+        <section class="tab-body" data-body="videos" hidden>
+          <div class="video-list" id="place-videos"></div>
+        </section>
+        <section class="tab-body" data-body="reviews" hidden>
+          <div id="place-reviews"></div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Trip planner -->
+    <aside class="panel panel-left" id="trip" aria-labelledby="trip-title" inert>
+      <button class="panel-close" id="close-trip" type="button" aria-label="Close trip planner"><i class="ph ph-x"></i></button>
+      <div class="panel-scroll">
+        <div class="trip-head">
+          <h2 id="trip-title">My trip</h2>
+          <div class="field">
+            <label for="trip-name">Trip name</label>
+            <input id="trip-name" type="text" maxlength="60" placeholder="Summer loop">
+          </div>
+          <div class="field">
+            <label for="trip-start">Start date</label>
+            <input id="trip-start" type="date">
+          </div>
+          <dl class="trip-stats" id="trip-stats"></dl>
+        </div>
+        <ol class="stops" id="trip-stops"></ol>
+        <div class="trip-actions" id="trip-actions">
+          <button class="btn btn-accent" id="trip-share" type="button"><i class="ph ph-paper-plane-tilt"></i><span>Share this trip</span></button>
+          <button class="btn btn-ghost" id="trip-copy" type="button"><i class="ph ph-copy"></i><span>Copy plan</span></button>
+          <button class="btn btn-ghost" id="trip-print" type="button"><i class="ph ph-printer"></i><span>Print</span></button>
+          <button class="btn btn-ghost" id="trip-clear" type="button"><i class="ph ph-trash"></i><span>Clear</span></button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Destinations browser -->
+  <dialog class="sheet" id="browse" aria-labelledby="browse-title">
+    <div class="sheet-head">
+      <h2 id="browse-title">Destinations</h2>
+      <button class="panel-close static" id="close-browse" type="button" aria-label="Close destinations"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="chips" id="browse-countries" role="group" aria-label="Explore a whole country"></div>
+    <div class="chips" id="browse-filters" role="group" aria-label="Filter by region"></div>
+    <div class="dest-grid" id="browse-grid"></div>
+  </dialog>
+
+  <!-- Recommended plan wizard -->
+  <dialog class="sheet plan" id="plan" aria-labelledby="plan-title">
+    <div class="sheet-head">
+      <h2 id="plan-title">Plan my trip</h2>
+      <button class="panel-close static" id="close-plan" type="button" aria-label="Close planner"><i class="ph ph-x"></i></button>
+    </div>
+    <div id="plan-body"></div>
+  </dialog>
+
+  <!-- Trip photo -->
+  <dialog class="sheet poster" id="poster" aria-labelledby="poster-title">
+    <div class="sheet-head">
+      <h2 id="poster-title">Your trip photo</h2>
+      <button class="panel-close static" id="close-poster" type="button" aria-label="Close trip photo"><i class="ph ph-x"></i></button>
+    </div>
+    <div id="poster-box"></div>
+    <div class="plan-actions">
+      <a class="btn btn-accent" id="poster-save" hidden><i class="ph ph-download-simple" aria-hidden="true"></i><span>Download photo</span></a>
+      <button class="btn btn-ghost" id="poster-share" type="button" hidden><i class="ph ph-share-network" aria-hidden="true"></i><span>Share</span></button>
+    </div>
+  </dialog>
+
+  <!-- Community contribution form -->
+  <dialog class="sheet plan" id="contribute" aria-labelledby="contribute-title">
+    <div class="sheet-head">
+      <h2 id="contribute-title">Add a place or tip</h2>
+      <button class="panel-close static" id="close-contribute" type="button" aria-label="Close form"><i class="ph ph-x"></i></button>
+    </div>
+    <form id="contribute-form" style="margin-top:18px">
+      <div class="field"><label for="c-kind">What are you adding?</label>
+        <select id="c-kind" name="kind"><option value="place">A new place</option><option value="tip">A travel tip</option><option value="fix">A correction to wrong information</option></select></div>
+      <div class="field"><label for="c-cat">Category</label><select id="c-cat" name="cat"></select></div>
+      <div class="field"><label for="c-name">Name or short title</label><input id="c-name" name="name" type="text" maxlength="80" required></div>
+      <div class="field"><label for="c-note">Details: why go, when, what to know</label><textarea id="c-note" name="note" rows="4" maxlength="600"></textarea></div>
+      <div class="field"><label for="c-url">Link, for example a map or Instagram page (optional)</label><input id="c-url" name="url" type="url" maxlength="300" placeholder="https://"></div>
+      <label class="check"><input type="checkbox" name="pin" checked> Pin it where the map is centred now</label>
+      <p class="note" id="contribute-who"></p>
+      <button class="btn btn-accent btn-wide" id="c-send" type="submit" style="margin-top:14px"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i><span>Publish for everyone</span></button>
+    </form>
+  </dialog>
+
+  <!-- Community trips -->
+  <dialog class="sheet" id="feed" aria-labelledby="feed-title">
+    <div class="sheet-head">
+      <h2 id="feed-title">Community trips</h2>
+      <button class="panel-close static" id="close-feed" type="button" aria-label="Close community trips"><i class="ph ph-x"></i></button>
+    </div>
+    <div id="feed-body"></div>
+  </dialog>
+
+  <!-- Share my trip -->
+  <dialog class="sheet plan" id="share-trip" aria-labelledby="share-title">
+    <div class="sheet-head">
+      <h2 id="share-title">Share this trip</h2>
+      <button class="panel-close static" id="close-share" type="button" aria-label="Close share form"><i class="ph ph-x"></i></button>
+    </div>
+    <form id="share-form" style="margin-top:18px">
+      <div class="field"><label for="s-title">Trip title</label><input id="s-title" name="title" type="text" maxlength="100" required></div>
+      <div class="field"><label for="s-status">Where are you with this trip?</label>
+        <select id="s-status" name="status"><option value="done">I have done this trip</option><option value="plan">I am planning it</option></select></div>
+      <div class="field"><label for="s-story">Your experience: what you loved, what to skip, tips for others</label><textarea id="s-story" name="story" rows="7" maxlength="4000"></textarea></div>
+      <p class="note" id="share-who"></p>
+      <button class="btn btn-accent btn-wide" id="s-send" type="submit" style="margin-top:14px"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i><span>Share with everyone</span></button>
+    </form>
+  </dialog>
+
+  <dialog class="lightbox" id="lightbox" aria-label="Photo viewer">
+    <button class="panel-close" id="close-lightbox" type="button" aria-label="Close photo"><i class="ph ph-x"></i></button>
+    <img id="lightbox-img" alt="">
+    <p id="lightbox-cap"></p>
+    <p id="lightbox-credit"></p>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding:24px;color:#fff">Meridian is an interactive globe and travel planner. Please enable JavaScript to explore destinations.</p>
+  </noscript>
+
+  <script src="vendor/globe.gl.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/landmarks.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/community.js"></script>
+  <script src="js/social.js"></script>
+</body>
+</html>

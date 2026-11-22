@@ -1,0 +1,48 @@
+rules_version = '2';
+// Meridian community notes. Everyone can read. Only signed-in Google users can add,
+// and only the author (or a site admin) can change or remove a note.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    // Put the site owner's Google email(s) here so they can remove anything.
+    function isAdmin() { return signedIn() && request.auth.token.email in ['OWNER_EMAIL_HERE']; }
+
+    match /contributions/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['placeId', 'placeName', 'kind', 'cat', 'name', 'note', 'url', 'lat', 'lng', 'uid', 'author', 'created'])
+        && request.resource.data.kind in ['place', 'tip', 'fix']
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && request.resource.data.note is string && request.resource.data.note.size() <= 600
+        && request.resource.data.url is string && request.resource.data.url.size() <= 300
+        && request.resource.data.placeId is string && request.resource.data.placeId.size() <= 80
+        && request.resource.data.created == request.time;
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if false;
+    }
+
+    // Shared trips: everyone can read, signed-in travellers publish their own.
+    match /trips/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'author', 'title', 'story', 'status', 'days', 'stops', 'created'])
+        && request.resource.data.title is string && request.resource.data.title.size() >= 3 && request.resource.data.title.size() <= 100
+        && request.resource.data.story is string && request.resource.data.story.size() <= 4000
+        && request.resource.data.status in ['done', 'plan']
+        && request.resource.data.stops is list && request.resource.data.stops.size() >= 1 && request.resource.data.stops.size() <= 40
+        && request.resource.data.created == request.time;
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if false;
+    }
+
+    // Who follows whom. The document id is "<follower uid>_<followed uid>".
+    match /follows/{id} {
+      allow read: if signedIn() && resource.data.from == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.from == request.auth.uid && id == request.auth.uid + '_' + request.resource.data.to;
+      allow delete: if signedIn() && resource.data.from == request.auth.uid;
+      allow update: if false;
+    }
+  }
+}
