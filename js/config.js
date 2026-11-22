@@ -17,5 +17,5 @@ window.MERIDIAN_CONFIG = {
     appId: '...',
   },
   */
-  repo: '',   // public code address, for example 'https://github.com/your-name/meridian'. Shown as "Help improve this site".
+  repo: 'https://github.com/chteerut/meridian',   // public code address, for example 'https://github.com/your-name/meridian'. Shown as "Help improve this site".
 };
